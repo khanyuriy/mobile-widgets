@@ -33,17 +33,20 @@ depends on hammer.js
             function pan(event) {
                 if (!panStarted) return;
 
-                var size = isHor ? element[0].offsetWidth : element[0].offsetHeight,
+                var size = getSize(),
                     delta = isHor ? event.deltaX : event.deltaY,
                     percent = delta / size,
                     translateX = 0, translateY = 0;
 
                 if (isHor) {
                     translateX = x + (percent * 100);
+                    if (translateX > Math.abs(getMaxTransformValue(delta))) return;
                 }
                 else if (isVer) {
                     translateY = y + (percent * 100);
+                    if (translateY > Math.abs(getMaxTransformValue(delta))) return;
                 }
+
 
                 console.log('translateX=' + translateX + ', translateY=' + translateY);
 
@@ -55,21 +58,18 @@ depends on hammer.js
             function panEnd(event) {
                 if (!panStarted) return;
 
-                var size = isHor ? element[0].offsetWidth : element[0].offsetHeight,
-                    delta = isHor ? event.deltaX : event.deltaY,
-                    viewport = isHor ? verge.viewportW() : verge.viewportH(),
-                    extraSize = size - viewport, transformPercent;
+                var delta = isHor ? event.deltaX : event.deltaY, transformPercent,
+                    size = getSize();
 
                 if (Math.abs(delta) > size * 0.2) {
+                    transformPercent = getMaxTransformValue(delta);
                     if (delta > 0) {
-                        transformPercent = 100 - (extraSize / size * 100);
                         if (isHor) {
                             x = side == LEFT ? transformPercent : 0;
                         } else {
                             y = side == TOP ? transformPercent : 0;
                         }
                     } else {
-                        transformPercent = -100 + (extraSize / size * 100);
                         if (isHor) {
                             x = side == LEFT ? 0 : transformPercent;
                         } else {
@@ -87,6 +87,24 @@ depends on hammer.js
                 element[0].style.transform = 'translate3d(' + x + '%,' + y + '%,0)'
 
                 panStarted = false;
+            }
+
+            function getMaxTransformValue(delta) {
+                var size = getSize(),
+                    viewport = getViewport(),
+                    extraSize = size - viewport;
+                if (delta > 0) {
+                    return 100 - (extraSize / size * 100);
+                }
+                return -100 + (extraSize / size * 100);
+            }
+
+            function getSize() {
+                return isHor ? element[0].offsetWidth : element[0].offsetHeight;
+            }
+
+            function getViewport() {
+                return isHor ? verge.viewportW() : verge.viewportH();
             }
 
             init();
